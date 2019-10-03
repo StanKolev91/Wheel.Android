@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="SimpleWheelView">
+        <attr name="wheel" format="reference" />
+        <attr name="pointer" format="reference" />
+        <attr name="sectors" format="integer" />
+    </declare-styleable>
+</resources>
