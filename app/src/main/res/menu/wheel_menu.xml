@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/increase"
+        android:title="@string/increase_sectors"
+        android:icon="@drawable/ic_circle_plus"
+        app:showAsAction="ifRoom"/>
+    <item android:id="@+id/decrease"
+        android:title="@string/decrease_sectors"
+        android:icon="@drawable/ic_circle_minus"
+        app:showAsAction="ifRoom"/>
+</menu>

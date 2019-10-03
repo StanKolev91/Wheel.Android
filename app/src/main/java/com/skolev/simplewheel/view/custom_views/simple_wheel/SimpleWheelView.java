@@ -46,13 +46,11 @@ public class SimpleWheelView extends View implements View.OnTouchListener {
     }
 
     private static final int NONE = -1;
-    private static final int SECTORS = 8;
     private static final int FULL_ROTATIONS_FOR_REWARD = 10;
     private static final int POINTER_ANIMATION_DURATION = 250;
     private static final int DEFAULT_SHORT_ANIMATION_DURATION = 1000;
     private static final int POINTER_ANIMATION_ANGLE_ON_WHEEL_STOP = 45;
     private static final float FULL_ROTATION_ANGLE_FLOAT = 360F;
-    private static final float DEGREES_PER_SECTOR_FLOAT = FULL_ROTATION_ANGLE_FLOAT / SECTORS;
     private static final float POINTER_INCLINATION_ANGLE_CONST = 3f;
 
     private int win;
@@ -64,6 +62,7 @@ public class SimpleWheelView extends View implements View.OnTouchListener {
     private int centerTextX;
     private int centerTextY;
     private int pointerTop;
+    private int sectorCount;
     private int startSector;
     private int pointerLeft;
     private int wheelCenterX;
@@ -71,6 +70,7 @@ public class SimpleWheelView extends View implements View.OnTouchListener {
     private int centerTextSize;
     private float startAngle;
     private float rotationAngle;
+    private float degreesSector;
     private float pointerDirection;
     private boolean canSpin;
     private boolean onPointer;
@@ -225,7 +225,7 @@ public class SimpleWheelView extends View implements View.OnTouchListener {
         int pointerHeight = pointerWidth << 1;
 
         if (this.wheelBluePrint == null || this.pointerBluePrint == null) {
-            this.wheelBluePrint = new Wheel(wheelRad, wheelCenterRadius, SECTORS);
+            this.wheelBluePrint = new Wheel(wheelRad, wheelCenterRadius, sectorCount);
             this.pointerBluePrint = new Pointer(pointerWidth, pointerHeight);
         } else if (width != oldw || height != oldh) {
             this.wheelBluePrint.radius = wheelRad;
@@ -267,6 +267,7 @@ public class SimpleWheelView extends View implements View.OnTouchListener {
         this.win = NONE;
         this.gestureDetector = createGestureDetector();
 
+        setSectors(new Random().nextInt(17)+5);
         initPaint();
         initMatrix();
         initTextPaint();
@@ -322,6 +323,10 @@ public class SimpleWheelView extends View implements View.OnTouchListener {
     }
 
     private void createWheel() {
+        if (wheel != null && !wheel.isRecycled()){
+            wheel.recycle();
+        }
+
         if (this.wheelRes != 0 && this.pointerRes != 0) {
             Bitmap tmp = BitmapFactory.decodeResource(getResources(), this.wheelRes, this.opt);
             this.wheel = Bitmap.createScaledBitmap(
@@ -419,7 +424,7 @@ public class SimpleWheelView extends View implements View.OnTouchListener {
                 this.wheel.getHeight(),
                 Bitmap.Config.ARGB_8888);
 
-        Canvas wheelCanvas = new Canvas(sectors);
+        Canvas wheelCanvas = new Canvas(this.sectors);
         int margin = wheelCanvas.getHeight() >> 4;
         float angle = 360f / this.wheelBluePrint.sectors;
         int dstWidth = Double.valueOf(
@@ -432,7 +437,7 @@ public class SimpleWheelView extends View implements View.OnTouchListener {
         this.textPaint.setTextAlign(Paint.Align.CENTER);
 
         for (int i = 0; i < this.wheelBluePrint.sectors; i++) {
-            String text = Integer.toString(SECTORS - i);
+            String text = Integer.toString(this.sectorCount - i);
 
             wheelCanvas.drawText(
                     text,
@@ -440,11 +445,12 @@ public class SimpleWheelView extends View implements View.OnTouchListener {
                     text.length(),
                     dstStart + (dstWidth >> 1),
                     dstBottom,
-                    textPaint);
+                    this.textPaint);
 
             wheelCanvas.rotate(angle, wheelCanvas.getWidth() >> 1, wheelCanvas.getHeight() >> 1);
         }
         wheelCanvas.rotate(90f, wheelCanvas.getWidth() >> 1, wheelCanvas.getHeight() >> 1);
+        this.textPaint.setTextSize(this.centerTextSize);
         invalidate();
         return this.sectors;
     }
@@ -492,7 +498,7 @@ public class SimpleWheelView extends View implements View.OnTouchListener {
     }
 
     private void startRewardAnimation() {
-        final int rewardAngle = (direction < 0 ? win : 360 - win) + 360 * FULL_ROTATIONS_FOR_REWARD;
+        final int rewardAngle = (this.direction < 0 ? win : 360 - win) + 360 * FULL_ROTATIONS_FOR_REWARD;
         updatePointerPosition();
 
         if (this.rewardAnimator == null) {
@@ -515,7 +521,7 @@ public class SimpleWheelView extends View implements View.OnTouchListener {
                 startPointerAnimation();
 
                 if (listener != null && listener.get() != null) {
-                    listener.get().onWheelStop(wheelBluePrint.sectors - Math.round(win / DEGREES_PER_SECTOR_FLOAT));
+                    listener.get().onWheelStop(wheelBluePrint.sectors - Math.round(win / degreesSector));
                 }
                 setEnabled(false);
             }
@@ -563,10 +569,10 @@ public class SimpleWheelView extends View implements View.OnTouchListener {
         //for handling sector touch events
         {
             float sectorTouched =
-                    (360f + startSector * DEGREES_PER_SECTOR_FLOAT + rotationAngle)
-                            - (startAngle + DEGREES_PER_SECTOR_FLOAT / 2f);
+                    (360f + startSector * degreesSector + rotationAngle)
+                            - (startAngle + degreesSector / 2f);
 
-            int sector = (int) (formatAngle(sectorTouched) / DEGREES_PER_SECTOR_FLOAT);
+            int sector = (int) (formatAngle(sectorTouched) / degreesSector);
         }
     }
 
@@ -608,8 +614,8 @@ public class SimpleWheelView extends View implements View.OnTouchListener {
                 this.wheelCenterX,
                 this.pointerTop);
 
-        float angle = Math.abs(this.rotationAngle) % DEGREES_PER_SECTOR_FLOAT;
-        float halfSector = DEGREES_PER_SECTOR_FLOAT / 2;
+        float angle = Math.abs(this.rotationAngle) % degreesSector;
+        float halfSector = degreesSector / 2;
         float rightBoundary = isSpinning() ? halfSector + 4f : halfSector + 8f;
         float leftBoundary = isSpinning() ? halfSector - 4f : halfSector - 8f;
 
@@ -674,10 +680,10 @@ public class SimpleWheelView extends View implements View.OnTouchListener {
     }
 
     public void setWin(int sector) {
-        this.win = Math.round(DEGREES_PER_SECTOR_FLOAT * sector);
+        this.win = Math.round(degreesSector * sector);
         Toast.makeText(
                 getContext(),
-                "Win sector: " + (sector != 0 ? sector : SECTORS),
+                "Win sector: " + (sector != 0 ? sector : sectorCount),
                 Toast.LENGTH_SHORT)
                 .show();
     }
@@ -711,7 +717,7 @@ public class SimpleWheelView extends View implements View.OnTouchListener {
     }
 
     public void spin(int rotationDirection) {
-        postDelayed(() -> setWin(new Random().nextInt(SECTORS)),
+        postDelayed(() -> setWin(new Random().nextInt(sectorCount)),
                 new Random().nextInt(1000));
 
         if (rotationDirection != WHEEL_LAST_DIRECTION) {
@@ -746,6 +752,25 @@ public class SimpleWheelView extends View implements View.OnTouchListener {
             invalidate();
         });
         this.spinAnimator.start();
+    }
+
+    public int getSectors() {
+        return wheelBluePrint.sectors;
+    }
+
+    public void setSectors(int sectors){
+        this.sectorCount = sectors;
+        this.degreesSector = FULL_ROTATION_ANGLE_FLOAT / sectorCount;
+
+        if (this.wheelBluePrint == null) {
+            return;
+        }
+        this.wheelBluePrint.sectors = sectors;
+        if (wheel!= null && !wheel.isRecycled()){
+            wheel.recycle();
+            wheel = null;
+        }
+        invalidate();
     }
 
     public void destroy() {

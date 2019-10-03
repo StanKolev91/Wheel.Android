@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">SimpleWheel</string>
+    <string name="increase_sectors">increase sectors</string>
+    <string name="decrease_sectors">decrease_sectors</string>
 </resources>

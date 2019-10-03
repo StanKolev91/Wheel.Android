@@ -3,6 +3,9 @@ package com.skolev.simplewheel.view.activities;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.OvershootInterpolator;
 import android.widget.Button;
@@ -67,5 +70,27 @@ public class MainActivity extends AppCompatActivity implements SimpleWheelView.O
                 .setDuration(500)
                 .setInterpolator(new OvershootInterpolator())
                 .start();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.wheel_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()){
+            case R.id.increase:{
+                wheel.setSectors(wheel.getSectors()+1);
+                break;
+            }
+            case R.id.decrease: {
+                wheel.setSectors(wheel.getSectors()-1);
+                break;
+            }
+        }
+        return super.onOptionsItemSelected(item);
     }
 }
