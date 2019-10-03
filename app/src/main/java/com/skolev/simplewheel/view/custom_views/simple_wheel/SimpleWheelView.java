@@ -33,6 +33,7 @@ import com.skolev.simplewheel.BuildConfig;
 import java.lang.ref.WeakReference;
 import java.util.Random;
 
+
 public class SimpleWheelView extends View implements View.OnTouchListener {
 
     public static final int WHEEL_LAST_DIRECTION = 0;
@@ -45,7 +46,7 @@ public class SimpleWheelView extends View implements View.OnTouchListener {
     }
 
     private static final int NONE = -1;
-    private static final int SECTORS = 16;
+    private static final int SECTORS = 8;
     private static final int FULL_ROTATIONS_FOR_REWARD = 10;
     private static final int POINTER_ANIMATION_DURATION = 250;
     private static final int DEFAULT_SHORT_ANIMATION_DURATION = 1000;
@@ -155,95 +156,6 @@ public class SimpleWheelView extends View implements View.OnTouchListener {
         }
         if (!this.canSpin) {
             this.paint.setColorFilter(null);
-        }
-    }
-
-    private void createWheel() {
-        if (this.wheelRes != 0 && this.pointerRes != 0) {
-            Bitmap tmp = BitmapFactory.decodeResource(getResources(), this.wheelRes, this.opt);
-            this.wheel = Bitmap.createScaledBitmap(
-                    tmp,
-                    this.wheelBluePrint.radius << 1,
-                    this.wheelBluePrint.radius << 1,
-                    true);
-
-            if (!tmp.isRecycled()) {
-                tmp.recycle();
-            }
-            tmp = BitmapFactory.decodeResource(getResources(), this.pointerRes, this.opt);
-            this.pointer = Bitmap.createScaledBitmap(
-                    tmp,
-                    this.pointerBluePrint.width,
-                    this.pointerBluePrint.height,
-                    true);
-
-            if (!tmp.isRecycled()) {
-                tmp.recycle();
-            }
-        } else {
-            this.wheel = Bitmap.createBitmap(
-                    this.wheelBluePrint.radius << 1,
-                    this.wheelBluePrint.radius << 1,
-                    Bitmap.Config.ARGB_8888);
-
-            Canvas canvas = new Canvas(this.wheel);
-
-            int centerX = this.wheelBluePrint.radius;
-            int centerY = this.wheelBluePrint.radius;
-
-            this.paint.setColor(Color.RED);
-            this.paint.setStrokeWidth(5);
-            canvas.drawCircle(
-                    centerX,
-                    centerY,
-                    this.wheelBluePrint.radius,
-                    this.paint);
-
-            this.paint.setColor(Color.LTGRAY);
-            canvas.drawCircle(
-                    centerX,
-                    centerY,
-                    this.wheelBluePrint.radius - this.paint.getStrokeWidth(),
-                    this.paint);
-
-            this.paint.setColor(Color.RED);
-            canvas.rotate((360f / this.wheelBluePrint.sectors) / 2f, centerX, centerY);
-
-            for (int i = 0; i < this.wheelBluePrint.sectors; i++) {
-                canvas.drawLine(
-                        centerX,
-                        0,
-                        centerX,
-                        centerY - this.wheelBluePrint.centerRadius,
-                        paint);
-
-                canvas.rotate(360f / wheelBluePrint.sectors, centerX, centerY);
-            }
-            this.paint.setColor(Color.YELLOW);
-            canvas.drawCircle(centerX, centerY, wheelBluePrint.centerRadius, paint);
-
-            this.paint.setColor(Color.GREEN);
-            this.pointer = Bitmap.createBitmap(
-                    this.pointerBluePrint.width,
-                    this.pointerBluePrint.height,
-                    Bitmap.Config.ARGB_8888);
-
-            canvas = new Canvas(this.pointer);
-            canvas.drawLine(
-                    this.pointer.getWidth(),
-                    0,
-                    this.pointer.getWidth() >> 1,
-                    this.pointer.getHeight(),
-                    this.paint);
-
-            canvas.drawLine(
-                    0,
-                    0,
-                    this.pointer.getWidth() >> 1,
-                    this.pointer.getHeight(),
-                    paint);
-
-            canvas.drawLine(0, 0, pointer.getWidth(), 0, this.paint);
         }
     }
 
@@ -402,9 +314,139 @@ public class SimpleWheelView extends View implements View.OnTouchListener {
         this.opt.inPreferredConfig = Bitmap.Config.ARGB_8888;
     }
 
-    private void setCenterTextPosition() {
-        this.centerTextX = this.wheelCenterX - Math.round(this.centerTextSize / 3.5f) * this.centerText.length();
-        this.centerTextY = this.wheelCenterY + Math.round(this.centerTextSize / 3f);
+    public void initSectors() {
+        if (this.sectors != null) {
+            this.sectors.recycle();
+        }
+        this.sectors = createSectors();
+    }
+
+    private void createWheel() {
+        if (this.wheelRes != 0 && this.pointerRes != 0) {
+            Bitmap tmp = BitmapFactory.decodeResource(getResources(), this.wheelRes, this.opt);
+            this.wheel = Bitmap.createScaledBitmap(
+                    tmp,
+                    this.wheelBluePrint.radius << 1,
+                    this.wheelBluePrint.radius << 1,
+                    true);
+
+            if (!tmp.isRecycled()) {
+                tmp.recycle();
+            }
+            tmp = BitmapFactory.decodeResource(getResources(), this.pointerRes, this.opt);
+            this.pointer = Bitmap.createScaledBitmap(
+                    tmp,
+                    this.pointerBluePrint.width,
+                    this.pointerBluePrint.height,
+                    true);
+
+            if (!tmp.isRecycled()) {
+                tmp.recycle();
+            }
+        } else {
+            this.wheel = Bitmap.createBitmap(
+                    this.wheelBluePrint.radius << 1,
+                    this.wheelBluePrint.radius << 1,
+                    Bitmap.Config.ARGB_8888);
+
+            Canvas canvas = new Canvas(this.wheel);
+
+            int centerX = this.wheelBluePrint.radius;
+            int centerY = this.wheelBluePrint.radius;
+
+            this.paint.setColor(Color.RED);
+            this.paint.setStrokeWidth(5);
+            canvas.drawCircle(
+                    centerX,
+                    centerY,
+                    this.wheelBluePrint.radius,
+                    this.paint);
+
+            this.paint.setColor(Color.LTGRAY);
+            canvas.drawCircle(
+                    centerX,
+                    centerY,
+                    this.wheelBluePrint.radius - this.paint.getStrokeWidth(),
+                    this.paint);
+
+            this.paint.setColor(Color.RED);
+            canvas.rotate(
+                    (FULL_ROTATION_ANGLE_FLOAT / this.wheelBluePrint.sectors) / 2f,
+                    centerX,
+                    centerY);
+
+            for (int i = 0; i < this.wheelBluePrint.sectors; i++) {
+                canvas.drawLine(
+                        centerX,
+                        0,
+                        centerX,
+                        centerY - this.wheelBluePrint.centerRadius,
+                        paint);
+
+                canvas.rotate(360f / wheelBluePrint.sectors, centerX, centerY);
+            }
+            this.paint.setColor(Color.YELLOW);
+            canvas.drawCircle(centerX, centerY, wheelBluePrint.centerRadius, paint);
+
+            this.paint.setColor(Color.GREEN);
+            this.pointer = Bitmap.createBitmap(
+                    this.pointerBluePrint.width,
+                    this.pointerBluePrint.height,
+                    Bitmap.Config.ARGB_8888);
+
+            canvas = new Canvas(this.pointer);
+            canvas.drawLine(
+                    this.pointer.getWidth(),
+                    0,
+                    this.pointer.getWidth() >> 1,
+                    this.pointer.getHeight(),
+                    this.paint);
+
+            canvas.drawLine(
+                    0,
+                    0,
+                    this.pointer.getWidth() >> 1,
+                    this.pointer.getHeight(),
+                    paint);
+
+            canvas.drawLine(0, 0, pointer.getWidth(), 0, this.paint);
+        }
+    }
+
+    private Bitmap createSectors() {
+        this.sectors = Bitmap.createBitmap(
+                this.wheel.getWidth(),
+                this.wheel.getHeight(),
+                Bitmap.Config.ARGB_8888);
+
+        Canvas wheelCanvas = new Canvas(sectors);
+        int margin = wheelCanvas.getHeight() >> 4;
+        float angle = 360f / this.wheelBluePrint.sectors;
+        int dstWidth = Double.valueOf(
+                Math.PI * this.wheel.getWidth()).intValue() / (this.wheelBluePrint.sectors << 1);
+
+        int dstStart = (wheelCanvas.getWidth() >> 1) - (dstWidth >> 1);
+        int dstBottom = margin + dstWidth;
+
+        this.textPaint.setTextSize(dstWidth);
+        this.textPaint.setTextAlign(Paint.Align.CENTER);
+
+        for (int i = 0; i < this.wheelBluePrint.sectors; i++) {
+            String text = Integer.toString(SECTORS - i);
+
+            wheelCanvas.drawText(
+                    text,
+                    0,
+                    text.length(),
+                    dstStart + (dstWidth >> 1),
+                    dstBottom,
+                    textPaint);
+
+            wheelCanvas.rotate(angle, wheelCanvas.getWidth() >> 1, wheelCanvas.getHeight() >> 1);
+        }
+        wheelCanvas.rotate(90f, wheelCanvas.getWidth() >> 1, wheelCanvas.getHeight() >> 1);
+        invalidate();
+        return this.sectors;
     }
 
     private GestureDetector createGestureDetector() {
@@ -442,6 +484,11 @@ public class SimpleWheelView extends View implements View.OnTouchListener {
                 return false;
             }
         });
+    }
+
+    private void setCenterTextPosition() {
+        this.centerTextX = this.wheelCenterX;
+        this.centerTextY = this.wheelCenterY + Math.round(this.centerTextSize / 3f);
     }
 
     private void startRewardAnimation() {
@@ -510,55 +557,17 @@ public class SimpleWheelView extends View implements View.OnTouchListener {
         this.pointerAnimator.start();
     }
 
-    public void initSectors() {
-        if (this.sectors != null) {
-            this.sectors.recycle();
-        }
-        this.sectors = createSectors();
-    }
-
-
-    private Bitmap createSectors() {
-        this.sectors = Bitmap.createBitmap(
-                this.wheel.getWidth(),
-                this.wheel.getHeight(),
-                Bitmap.Config.ARGB_8888);
-
-        Canvas wheelCanvas = new Canvas(sectors);
-        int margin = wheelCanvas.getHeight() >> 4;
-        float angle = 360f / this.wheelBluePrint.sectors;
-        int dstWidth = Double.valueOf(
-                Math.PI * this.wheel.getWidth()).intValue() / (this.wheelBluePrint.sectors << 1);
-
-        int dstStart = (wheelCanvas.getWidth() >> 1) - (dstWidth >> 1);
-        int dstBottom = margin + dstWidth;
-
-        this.textPaint.setTextSize(dstWidth);
-        for (int i = 0; i < this.wheelBluePrint.sectors; i++) {
-            String text = Integer.toString(SECTORS - i);
-            wheelCanvas.drawText(
-                    text,
-                    0,
-                    text.length(),
-                    dstStart - (text.length() > 1 ? dstWidth >> 2 : 0),
-                    dstBottom,
-                    textPaint);
-
-            wheelCanvas.rotate(angle, wheelCanvas.getWidth() >> 1, wheelCanvas.getHeight() >> 1);
-        }
-        wheelCanvas.rotate(90f, wheelCanvas.getWidth() >> 1, wheelCanvas.getHeight() >> 1);
-        invalidate();
-        return this.sectors;
-    }
-
     private void handleActionDown(MotionEvent event) {
         this.startAngle = calculateAngle(event.getX(), event.getY());
 
-        float sectorTouched =
-                (360f + startSector * DEGREES_PER_SECTOR_FLOAT + rotationAngle)
-                        - (startAngle + DEGREES_PER_SECTOR_FLOAT / 2f);
+        //for handling sector touch events
+        {
+            float sectorTouched =
+                    (360f + startSector * DEGREES_PER_SECTOR_FLOAT + rotationAngle)
+                            - (startAngle + DEGREES_PER_SECTOR_FLOAT / 2f);
 
-        int sector = (int) (formatAngle(sectorTouched) / DEGREES_PER_SECTOR_FLOAT);
+            int sector = (int) (formatAngle(sectorTouched) / DEGREES_PER_SECTOR_FLOAT);
+        }
     }
 
     private void handleActionMove(MotionEvent event) {
@@ -677,6 +686,7 @@ public class SimpleWheelView extends View implements View.OnTouchListener {
         this.listener = new WeakReference<>(listener);
     }
 
+    //sets initial sector
     public void setStartSector(int sector) {
         this.startSector = sector;
         if (this.rotationAngle == 0) {
